@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ресто Калкулатор BGN/EUR</title>
+
+<style>
+    * { box-sizing: border-box; }
+
+    :root {
+        --bg: #f7f9fc;
+        --card-bg: #ffffff;
+        --text: #000;
+        --accent: #0b5d1e;
+        --green: #c8f5c8;
+        --red: #f5c8c8;
+        --toggle-bg: #444;
+    }
+
+    .dark {
+        --bg: #1e1e1e;
+        --card-bg: #2a2a2a;
+        --text: #fff;
+        --toggle-bg: #eee;
+    }
+
+    body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: Arial, sans-serif;
+        padding: 10px 20px 20px 20px; /* moved higher globally */
+        max-width: 500px;
+        margin: auto;
+        transition: 0.3s;
+    }
+
+    h2 {
+        text-align: center;
+        margin-top: 0;
+        margin-bottom: 5px; /* tighter spacing */
+    }
+
+    .container {
+        background: var(--card-bg);
+        padding: 10px 20px 20px 20px; /* reduced top padding */
+        border-radius: 10px;
+    }
+
+    .toggle-container { text-align: right; margin-bottom: 10px; }
+
+    #darkToggle {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        background: var(--toggle-bg);
+        color: var(--bg);
+        font-weight: bold;
+    }
+
+    label { font-weight: bold; display: block; margin-top: 15px; }
+
+    .row {
+        position: relative;
+        margin-top: 5px;
+    }
+
+    /* FLAG CONTAINER */
+    .flag-wrap {
+        position: relative;
+    }
+
+    .flag {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 36px;
+        pointer-events: none;
+    }
+
+    .flag + input {
+        padding-left: 45px;
+    }
+
+    input {
+        width: 100%;
+        padding: 12px;
+        font-size: 22px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        text-align: center;
+        color: #000;
+    }
+
+    input[readonly] {
+        background: #eee;
+        font-weight: bold;
+    }
+
+    /* Hide native arrows */
+    input::-webkit-inner-spin-button,
+    input::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .arrows {
+        position: absolute;
+        right: 5px;
+        top: 5px;
+        bottom: 5px;
+        display: flex;
+        flex-direction: column;
+        width: 25px;
+        gap: 2px;
+    }
+
+    .arrows button {
+        flex: 1;
+        border: none;
+        background: rgba(0,0,0,0.1);
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .result-box {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 8px;
+        font-size: 24px;
+        text-align: center;
+        font-weight: bold;
+        color: #000;
+    }
+
+    .green { background: var(--green); }
+    .red { background: var(--red); }
+
+    #resetBtn {
+        margin-top: 25px;
+        width: 100%;
+        padding: 15px;
+        font-size: 18px;
+        border: none;
+        border-radius: 6px;
+        background: #cc4c2f;
+        color: white;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .copyright {
+        margin-top: 15px;
+        text-align: center;
+        font-size: 12px;
+        opacity: 0.7;
+    }
+
+    .version {
+        margin-top: 3px;
+        text-align: center;
+        font-size: 12px;
+        opacity: 0.7;
+    }
+
+    /* MOBILE OPTIMIZATION */
+    @media (max-width: 600px) {
+        .flag {
+            font-size: 28px;
+        }
+    }
+</style>
+</head>
+<body>
+
+<h2>Ресто Калкулатор BGN/EUR</h2>
+
+<div class="container">
+
+    <div class="toggle-container">
+        <button id="darkToggle">🌙 Dark Mode</button>
+    </div>
+
+    <p><strong>Обменен курс: 1 EUR = 1.95583 BGN</strong></p>
+
+    <!-- Amount Due EUR -->
+    <label>Сума за плащане (EUR)</label>
+    <div class="row flag-wrap">
+        <span class="flag">🇪🇺</span>
+        <input type="text" inputmode="decimal" id="dueEUR">
+        <div class="arrows">
+            <button onclick="step('dueEUR', 0.01)">▲</button>
+            <button onclick="step('dueEUR', -0.01)">▼</button>
+        </div>
+    </div>
+
+    <!-- Paid BGN -->
+    <label>Сума платено (BGN)</label>
+    <div class="row flag-wrap">
+        <span class="flag">🇧🇬</span>
+        <input type="text" inputmode="decimal" id="paidBGN">
+        <div class="arrows">
+            <button onclick="step('paidBGN', 0.01)">▲</button>
+            <button onclick="step('paidBGN', -0.01)">▼</button>
+        </div>
+    </div>
+
+    <!-- Paid EUR -->
+    <label>Сума платено (EUR)</label>
+    <div class="row flag-wrap">
+        <span class="flag">🇪🇺</span>
+        <input type="text" inputmode="decimal" id="paidEUR">
+        <div class="arrows">
+            <button onclick="step('paidEUR', 0.01)">▲</button>
+            <button onclick="step('paidEUR', -0.01)">▼</button>
+        </div>
+    </div>
+
+    <!-- Total Paid EUR -->
+    <label>Сума общо платено (EUR)</label>
+    <div class="flag-wrap">
+        <span class="flag">🇪🇺</span>
+        <input type="text" id="totalPaidEUR" readonly>
+    </div>
+
+    <!-- Duplicate Amount Due -->
+    <label>Сума за плащане (EUR)</label>
+    <div class="flag-wrap">
+        <span class="flag">🇪🇺</span>
+        <input type="text" id="dueEURcopy" readonly>
+    </div>
+
+    <!-- Result -->
+    <div id="resultBox" class="result-box">Резултат: 0.00</div>
+
+    <button id="resetBtn">ИЗЧИСТИ</button>
+
+    <div class="copyright">© ap86it@gmail.com, 2025</div>
+    <div class="version">Version: 2.1</div>
+
+</div>
+
+<script>
+const RATE = 1.95583;
+
+function normalize(v) {
+    if (!v) return 0;
+    return parseFloat(v.toString().replace(",", "."));
+}
+
+// Enable comma→dot conversion + recalculation + keyboard arrows
+document.querySelectorAll("input[type='text']").forEach(inp => {
+    inp.addEventListener("input", () => {
+        inp.value = inp.value.replace(",", ".");
+        calculate();
+    });
+
+    inp.addEventListener("keydown", e => {
+        if (e.key === "ArrowUp") {
+            e.preventDefault();
+            step(inp.id, 0.01);
+        }
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            step(inp.id, -0.01);
+        }
+    });
+});
+
+function step(id, amount) {
+    const el = document.getElementById(id);
+    let val = normalize(el.value);
+    el.value = (val + amount).toFixed(2);
+    calculate();
+}
+
+function calculate() {
+    const due = normalize(dueEUR.value);
+    const paidBGNval = normalize(paidBGN.value);
+    const paidEURval = normalize(paidEUR.value);
+
+    const paidBGNtoEUR = paidBGNval / RATE;
+    const total = paidBGNtoEUR + paidEURval;
+
+    totalPaidEUR.value = total.toFixed(2);
+    dueEURcopy.value = due.toFixed(2);
+
+    const diff = total - due;
+
+    if (diff < 0) {
+        resultBox.textContent = "Оставаща сума за плащане: " + Math.abs(diff).toFixed(2) + " EUR";
+        resultBox.className = "result-box red";
+    } else {
+        resultBox.textContent = "Ресто: " + diff.toFixed(2) + " EUR";
+        resultBox.className = "result-box green";
+    }
+}
+
+resetBtn.addEventListener("click", () => {
+    dueEUR.value = "";
+    paidBGN.value = "";
+    paidEUR.value = "";
+    totalPaidEUR.value = "";
+    dueEURcopy.value = "";
+    resultBox.textContent = "Резултат: 0.00";
+    resultBox.className = "result-box";
+});
+
+darkToggle.addEventListener("click", () => {
+    const dark = document.body.classList.toggle("dark");
+    darkToggle.textContent = dark ? "☀️ Light Mode" : "🌙 Dark Mode";
+});
+</script>
+
+</body>
+</html>
